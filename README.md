@@ -16,7 +16,7 @@ $SS = S^\dagger \cdot S^\dagger = Z$
 
 # Status
 
-This notebook is incomplete.
+This code is complete but may still contain some errors.
 
 # How to use
 Please refer to the file example_use.ipynb

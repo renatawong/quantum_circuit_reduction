@@ -14,5 +14,9 @@ $HXH = Z$,
 
 $SS = S^\dagger \cdot S^\dagger = Z$
 
+# Status
+
+This notebook is incomplete.
+
 # How to use
 Please refer to the file example_use.ipynb

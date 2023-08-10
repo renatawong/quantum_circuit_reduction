@@ -5,9 +5,13 @@ This code reduces the number of gates in a quantum circuit according to the foll
 XX = YY = ZZ = HH = I, Sdg x S = S x Sdg = I, CX x CX = II, HZH = X, HXH = Z, SS = Sdg x Sdg = Z
 '''
 
+from qiskit import transpile
 from qiskit import QuantumCircuit
+import numpy as np
 from qiskit.converters import circuit_to_dag
 from qiskit.transpiler import TransformationPass
+from qiskit.dagcircuit import DAGOpNode
+from qiskit.circuit import Instruction
 
 
 class GateReduction(TransformationPass):
@@ -18,6 +22,19 @@ class GateReduction(TransformationPass):
     """
 
     def run(self, dag):
+        
+        # take care of cx gates first
+        nodes = dag.op_nodes()
+        for index, node in enumerate(nodes):
+            if index+1 < len(nodes):
+                if node.op.name == 'cx':
+                    next_node = nodes[index+1]
+                    if next_node.op.name == node.op.name:
+                        if node.qargs == next_node.qargs:
+                            dag.remove_op_node(node)
+                            dag.remove_op_node(next_node)
+                            nodes.remove(node)
+                            nodes.remove(next_node)
 
         # iterate over all operations, wire after wire
         for wire in dag.wires:
@@ -27,15 +44,18 @@ class GateReduction(TransformationPass):
             
             for index, node in enumerate(nodes): 
 
-                if node.op.name in ['x', 'y', 'z', 'h', 'cx']:
+                if node.op.name in ['x', 'y', 'z', 'h']:
                     
                     # warning: dag.node_counter produces incorrect values for our use
                     if index+1 < len(nodes): 
-                        next_node = nodes[index+1]
+                        next_node = nodes[index+1] 
+                        
                         if next_node.op.name == node.op.name:
                             if node.qargs == next_node.qargs:
                                 dag.remove_op_node(node)
                                 dag.remove_op_node(next_node)
+                                nodes.remove(node)
+                                nodes.remove(next_node)
 
                         if index+2 < len(nodes):
                             if node.op.name == 'h' and next_node.op.name == 'z':
@@ -46,6 +66,9 @@ class GateReduction(TransformationPass):
                                     dag.substitute_node_with_dag(third_node, circuit_to_dag(replacement))
                                     dag.remove_op_node(node)
                                     dag.remove_op_node(next_node)
+                                    nodes[index+2] = DAGOpNode(op=Instruction(name='x', num_qubits=1, num_clbits=0, params=[]))
+                                    nodes.remove(node)
+                                    nodes.remove(next_node)
 
                         if index+2 < len(nodes):
                             if node.op.name == 'h' and next_node.op.name == 'x':
@@ -56,6 +79,9 @@ class GateReduction(TransformationPass):
                                     dag.substitute_node_with_dag(third_node, circuit_to_dag(replacement))
                                     dag.remove_op_node(node)
                                     dag.remove_op_node(next_node)
+                                    nodes[index+2] = DAGOpNode(op=Instruction(name='z', num_qubits=1, num_clbits=0, params=[]))     # here not done, need to insert node
+                                    nodes.remove(node)
+                                    nodes.remove(next_node)
 
 
                 if node.op.name in ['s', 'sdg']:
@@ -66,13 +92,17 @@ class GateReduction(TransformationPass):
                             if next_node.op.name != node.op.name:
                                 dag.remove_op_node(node)
                                 dag.remove_op_node(next_node)
+                                nodes.remove(node)
+                                nodes.remove(next_node)
 
                             elif next_node.op.name == node.op.name:
                                 dag.remove_op_node(node)
+                                nodes.remove(node)
                                 replacement = QuantumCircuit(1)
                                 replacement.z(0)
                                 dag.substitute_node_with_dag(next_node, circuit_to_dag(replacement))
-
+                                nodes[index+1] = DAGOpNode(op=Instruction(name='z', num_qubits=1, num_clbits=0, params=[]))
+                
         return dag
 
 

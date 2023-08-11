@@ -7,7 +7,6 @@ XX = YY = ZZ = HH = I, Sdg x S = S x Sdg = I, CX x CX = II, HZH = X, HXH = Z, SS
 
 from qiskit import transpile
 from qiskit import QuantumCircuit
-import numpy as np
 from qiskit.converters import circuit_to_dag
 from qiskit.transpiler import TransformationPass
 from qiskit.dagcircuit import DAGOpNode
@@ -18,7 +17,6 @@ class GateReduction(TransformationPass):
     
     """
     A transpiler pass to reduce gate number in a circuit.
-    Rules: XX=YY=ZZ=HH=I, SdgS=SSdg=I, CXCX=II
     """
 
     def run(self, dag):

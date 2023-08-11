@@ -24,6 +24,9 @@ class GateReduction(TransformationPass):
     def run(self, dag):
         
         # take care of cx gates first
+        # cx gates may be incorrectly removed when processing nodes according to wires
+        # this happens in multi-wire circuits when there are operators between 2 cx gates on one wire 
+        # but not on another wire
         nodes = dag.op_nodes()
         for index, node in enumerate(nodes):
             if index+1 < len(nodes):
@@ -79,7 +82,7 @@ class GateReduction(TransformationPass):
                                     dag.substitute_node_with_dag(third_node, circuit_to_dag(replacement))
                                     dag.remove_op_node(node)
                                     dag.remove_op_node(next_node)
-                                    nodes[index+2] = DAGOpNode(op=Instruction(name='z', num_qubits=1, num_clbits=0, params=[]))     # here not done, need to insert node
+                                    nodes[index+2] = DAGOpNode(op=Instruction(name='z', num_qubits=1, num_clbits=0, params=[]))
                                     nodes.remove(node)
                                     nodes.remove(next_node)
 
